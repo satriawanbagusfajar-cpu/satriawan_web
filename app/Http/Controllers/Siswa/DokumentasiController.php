@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Dokumentasi;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class DokumentasiController extends Controller
@@ -32,7 +33,16 @@ class DokumentasiController extends Controller
             'keterangan' => ['nullable', 'string', 'max:500'],
         ]);
 
-        $path = $request->file('foto')->store('dokumentasi/' . $siswa->id, 'public');
+        $relativeDir = 'dokumentasi/' . $siswa->id;
+        $targetDir = public_path('media/' . $relativeDir);
+
+        if (! is_dir($targetDir)) {
+            mkdir($targetDir, 0755, true);
+        }
+
+        $filename = Str::random(40) . '.' . $request->file('foto')->getClientOriginalExtension();
+        $request->file('foto')->move($targetDir, $filename);
+        $path = $relativeDir . '/' . $filename;
 
         Dokumentasi::create([
             'siswa_id' => $siswa->id,

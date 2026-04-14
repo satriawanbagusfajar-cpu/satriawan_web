@@ -158,11 +158,21 @@ Route::get('/storage/{path}', function (string $path) {
 // Endpoint media publik yang tidak bergantung pada symlink /public/storage.
 Route::get('/media/{path}', function (string $path) {
     $normalizedPath = ltrim(str_replace('\\', '/', $path), '/');
-    $normalizedPath = preg_replace('#^(public|storage)/#', '', $normalizedPath) ?? $normalizedPath;
+    $normalizedPath = preg_replace('#^(public|storage|media)/#', '', $normalizedPath) ?? $normalizedPath;
 
-    if (str_contains($normalizedPath, '..') || ! Storage::disk('public')->exists($normalizedPath)) {
+    if (str_contains($normalizedPath, '..')) {
         abort(404);
     }
 
-    return response()->file(Storage::disk('public')->path($normalizedPath));
+    if (Storage::disk('public')->exists($normalizedPath)) {
+        return response()->file(Storage::disk('public')->path($normalizedPath));
+    }
+
+    $publicMediaPath = public_path('media/' . $normalizedPath);
+    if (is_file($publicMediaPath)) {
+        return response()->file($publicMediaPath);
+    }
+
+    abort(404);
+
 })->where('path', '.*')->name('media.public');

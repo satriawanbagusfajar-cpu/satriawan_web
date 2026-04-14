@@ -7,6 +7,7 @@ use App\Models\Absensi;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class AbsensiController extends Controller
@@ -76,7 +77,16 @@ class AbsensiController extends Controller
             return back()->with('error', 'Anda sudah melakukan absensi hari ini.');
         }
 
-        $path = $request->file('foto')->store('absensi/' . $siswa->id, 'public');
+        $relativeDir = 'absensi/' . $siswa->id;
+        $targetDir = public_path('media/' . $relativeDir);
+
+        if (! is_dir($targetDir)) {
+            mkdir($targetDir, 0755, true);
+        }
+
+        $filename = Str::random(40) . '.' . $request->file('foto')->getClientOriginalExtension();
+        $request->file('foto')->move($targetDir, $filename);
+        $path = $relativeDir . '/' . $filename;
 
         Absensi::create([
             'siswa_id' => $siswa->id,
