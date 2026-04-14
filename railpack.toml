@@ -1,5 +1,0 @@
-[build]
-buildCommand = "composer install --no-dev --optimize-autoloader && npm install && npm run build"
-
-[start]
-cmd = "frankenphp run --config /app/Caddyfile"
