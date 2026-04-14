@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="page-header d-flex justify-content-between align-items-center">
+<div class="page-header d-flex flex-wrap justify-content-between align-items-center gap-2">
     <div>
         <h3 class="fw-bold mb-1"><i class="bi bi-building me-2"></i>Data Perusahaan</h3>
         <p class="text-muted mb-0">Kelola data perusahaan mitra PKL</p>

@@ -49,6 +49,11 @@
             flex-direction: column;
         }
 
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+
         /* ═══════ NAVBAR ═══════ */
         .navbar-modern {
             background: linear-gradient(135deg, #FF8C42 0%, #FF6B35 50%, #FF5722 100%);
@@ -199,6 +204,10 @@
 
         /* ═══════ TABLES ═══════ */
         .table-modern { margin-bottom: 0; }
+        .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
         .table-modern thead {
             background: linear-gradient(135deg, #FF8C42 0%, #FF6B35 100%);
             color: #fff;
@@ -429,6 +438,7 @@
             color: var(--text-muted);
             font-size: .82rem;
             font-weight: 500;
+            word-break: break-word;
         }
 
         /* ═══════ ANIMATIONS ═══════ */
@@ -470,13 +480,66 @@
                 margin-top: .75rem;
                 backdrop-filter: blur(20px);
             }
+            .navbar-modern .navbar-brand {
+                font-size: 1rem;
+                gap: 8px;
+            }
+            .navbar-modern .navbar-brand .brand-icon {
+                width: 34px;
+                height: 34px;
+            }
             .navbar-modern .nav-link { padding: 10px 14px !important; }
             .page-header h3 { font-size: 1.25rem; }
         }
+        @media (max-width: 767px) {
+            main.container {
+                padding-left: .75rem;
+                padding-right: .75rem;
+            }
+            .page-header {
+                margin-bottom: 1rem;
+                padding-bottom: .75rem;
+            }
+            .card-modern {
+                border-radius: 12px;
+            }
+            .card-modern .card-body {
+                padding: .9rem;
+            }
+            .table-modern thead th,
+            .table-modern tbody td {
+                padding: 10px 12px;
+                font-size: .82rem;
+            }
+            .btn-gradient,
+            .btn-outline-primary,
+            .btn-logout {
+                font-size: .82rem;
+                padding: 8px 12px;
+            }
+            .alert-modern {
+                padding: 12px 14px;
+                font-size: .85rem;
+            }
+        }
         @media (max-width: 575px) {
+            .navbar-modern {
+                padding: .5rem 0;
+            }
+            .navbar-modern .navbar-brand {
+                font-size: .92rem;
+                max-width: calc(100vw - 96px);
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
             .stat-card .card-body { padding: .75rem !important; }
             .stat-card .stat-icon { width: 44px; height: 44px; font-size: 18px; border-radius: 12px; }
             .stat-card .fs-4 { font-size: 1.3rem !important; }
+            .footer-modern {
+                font-size: .75rem;
+                padding: .9rem .6rem;
+            }
         }
     </style>
 </head>

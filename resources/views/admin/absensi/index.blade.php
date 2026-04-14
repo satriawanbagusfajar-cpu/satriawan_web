@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="page-header d-flex justify-content-between align-items-center">
+<div class="page-header d-flex flex-wrap justify-content-between align-items-center gap-2">
     <div>
         <h3 class="fw-bold mb-1"><i class="bi bi-calendar-check me-2"></i>Data Absensi Siswa</h3>
         <p class="text-muted mb-0">Pantau kehadiran seluruh siswa PKL</p>
@@ -19,8 +19,8 @@
                 <h6 class="fw-bold mb-1"><i class="bi bi-file-pdf me-2" style="color:#059669;"></i>Export Absensi ke PDF</h6>
                 <p class="text-muted small mb-2">Unduh laporan absensi siswa per bulan dalam format PDF</p>
             </div>
-            <form action="{{ route('admin.absensi.exportPdf') }}" method="GET" class="d-flex gap-2 align-items-end" style="min-width: 500px;">
-                <div class="flex-grow-1">
+            <form action="{{ route('admin.absensi.exportPdf') }}" method="GET" class="row g-2 align-items-end w-100">
+                <div class="col-12 col-md-6 col-lg">
                     <label class="form-label fw-semibold small mb-1">Pilih Siswa</label>
                     <select class="form-select form-select-sm" name="siswa_id" required>
                         <option value="">-- Pilih Siswa --</option>
@@ -29,9 +29,9 @@
                         @endforeach
                     </select>
                 </div>
-                <div>
+                <div class="col-6 col-md-3 col-lg-2">
                     <label class="form-label fw-semibold small mb-1">Bulan</label>
-                    <select class="form-select form-select-sm" name="bulan" style="width: 130px;">
+                    <select class="form-select form-select-sm" name="bulan">
                         @php
                             $namaBulan = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
                             $bulanSekarang = now()->month;
@@ -41,15 +41,17 @@
                         @endfor
                     </select>
                 </div>
-                <div>
+                <div class="col-6 col-md-3 col-lg-2">
                     <label class="form-label fw-semibold small mb-1">Tahun</label>
-                    <select class="form-select form-select-sm" name="tahun" style="width: 100px;">
+                    <select class="form-select form-select-sm" name="tahun">
                         @for($i = now()->year; $i >= now()->year - 5; $i--)
                             <option value="{{ $i }}" @selected($i === now()->year)>{{ $i }}</option>
                         @endfor
                     </select>
                 </div>
-                <button type="submit" class="btn btn-success btn-sm"><i class="bi bi-download me-1"></i>Download PDF</button>
+                <div class="col-12 col-lg-auto d-grid">
+                    <button type="submit" class="btn btn-success btn-sm"><i class="bi bi-download me-1"></i>Download PDF</button>
+                </div>
             </form>
         </div>
     </div>

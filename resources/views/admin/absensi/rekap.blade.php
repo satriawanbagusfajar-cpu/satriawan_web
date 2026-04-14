@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="page-header d-flex justify-content-between align-items-center">
+<div class="page-header d-flex flex-wrap justify-content-between align-items-center gap-2">
     <div>
         <h3 class="fw-bold mb-1"><i class="bi bi-bar-chart-line me-2"></i>Rekap Absensi</h3>
         <p class="text-muted mb-0">Rekap kehadiran per hari, per bulan, per siswa</p>

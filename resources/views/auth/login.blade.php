@@ -21,7 +21,8 @@
                 linear-gradient(135deg, rgba(255,245,240,.86) 0%, rgba(255,232,214,.82) 100%),
                 url('{{ asset('images/foto smk.jpg') }}') center top/cover no-repeat fixed;
             position: relative;
-            overflow: hidden;
+            overflow-x: hidden;
+            overflow-y: auto;
             -webkit-font-smoothing: antialiased;
         }
         body::before {
@@ -194,8 +195,12 @@
             50% { transform: translateY(-30px) rotate(180deg); }
         }
         @media (max-width: 767px) {
+            body {
+                background-attachment: scroll;
+            }
             .login-wrapper {
                 justify-content: center;
+                padding: 1rem;
             }
             .login-right { padding: 2rem 1.5rem; }
             .login-card { width: 100%; }
