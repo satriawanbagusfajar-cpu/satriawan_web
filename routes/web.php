@@ -145,7 +145,8 @@ if (app()->environment('local')) {
 
 // Fallback untuk hosting yang belum memiliki symbolic link public/storage.
 Route::get('/storage/{path}', function (string $path) {
-    $normalizedPath = str_replace('\\', '/', $path);
+    $normalizedPath = ltrim(str_replace('\\', '/', $path), '/');
+    $normalizedPath = preg_replace('#^(public|storage)/#', '', $normalizedPath) ?? $normalizedPath;
 
     if (str_contains($normalizedPath, '..') || ! Storage::disk('public')->exists($normalizedPath)) {
         abort(404);
@@ -153,3 +154,15 @@ Route::get('/storage/{path}', function (string $path) {
 
     return response()->file(Storage::disk('public')->path($normalizedPath));
 })->where('path', '.*')->name('storage.public');
+
+// Endpoint media publik yang tidak bergantung pada symlink /public/storage.
+Route::get('/media/{path}', function (string $path) {
+    $normalizedPath = ltrim(str_replace('\\', '/', $path), '/');
+    $normalizedPath = preg_replace('#^(public|storage)/#', '', $normalizedPath) ?? $normalizedPath;
+
+    if (str_contains($normalizedPath, '..') || ! Storage::disk('public')->exists($normalizedPath)) {
+        abort(404);
+    }
+
+    return response()->file(Storage::disk('public')->path($normalizedPath));
+})->where('path', '.*')->name('media.public');

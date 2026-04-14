@@ -66,7 +66,7 @@
                 @foreach($riwayat as $dok)
                     <div class="col-md-4 col-6">
                         <div class="card border-0 shadow-sm rounded-3 overflow-hidden h-100">
-                            <img src="{{ asset('storage/' . $dok->foto) }}" class="card-img-top" style="height:200px; object-fit:cover; cursor:pointer;" alt="Dokumentasi" data-bs-toggle="modal" data-bs-target="#fotoModal{{ $dok->id }}">
+                            <img src="{{ route('media.public', ['path' => $dok->foto]) }}" class="card-img-top" style="height:200px; object-fit:cover; cursor:pointer;" alt="Dokumentasi" data-bs-toggle="modal" data-bs-target="#fotoModal{{ $dok->id }}">
                             <div class="card-body p-3">
                                 <div class="d-flex justify-content-between align-items-start">
                                     <div>
@@ -94,7 +94,7 @@
                                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                 </div>
                                 <div class="modal-body text-center p-2">
-                                    <img src="{{ asset('storage/' . $dok->foto) }}" class="img-fluid rounded-3" style="max-height:70vh;" alt="Dokumentasi">
+                                    <img src="{{ route('media.public', ['path' => $dok->foto]) }}" class="img-fluid rounded-3" style="max-height:70vh;" alt="Dokumentasi">
                                     @if($dok->keterangan)
                                         <p class="mt-3 text-muted">{{ $dok->keterangan }}</p>
                                     @endif

@@ -46,7 +46,7 @@
                 @foreach($dokumentasi as $dok)
                     <div class="col-md-3 col-6">
                         <div class="card border-0 shadow-sm rounded-3 overflow-hidden h-100">
-                            <img src="{{ asset('storage/' . $dok->foto) }}" class="card-img-top" style="height:180px; object-fit:cover; cursor:pointer;" alt="Dokumentasi" data-bs-toggle="modal" data-bs-target="#fotoModal{{ $dok->id }}">
+                            <img src="{{ route('media.public', ['path' => $dok->foto]) }}" class="card-img-top" style="height:180px; object-fit:cover; cursor:pointer;" alt="Dokumentasi" data-bs-toggle="modal" data-bs-target="#fotoModal{{ $dok->id }}">
                             <div class="card-body p-3">
                                 <h6 class="fw-bold mb-1" style="font-size:.85rem;">{{ $dok->siswa?->nama ?? '-' }}</h6>
                                 <small class="text-muted"><i class="bi bi-calendar3 me-1"></i>{{ \Carbon\Carbon::parse($dok->tanggal)->format('d M Y') }}</small>
@@ -69,7 +69,7 @@
                                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                 </div>
                                 <div class="modal-body text-center p-2">
-                                    <img src="{{ asset('storage/' . $dok->foto) }}" class="img-fluid rounded-3" style="max-height:70vh;" alt="Dokumentasi">
+                                    <img src="{{ route('media.public', ['path' => $dok->foto]) }}" class="img-fluid rounded-3" style="max-height:70vh;" alt="Dokumentasi">
                                     @if($dok->keterangan)
                                         <p class="mt-3 text-muted">{{ $dok->keterangan }}</p>
                                     @endif
