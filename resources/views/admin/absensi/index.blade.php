@@ -163,7 +163,7 @@
                             <td>
                                 @if($item->foto)
                                     @php $fotoItems[] = $item; @endphp
-                                    <img src="{{ route('media.public', ['path' => $item->foto]) }}" class="rounded" style="height:40px; width:40px; object-fit:cover; cursor:pointer;" alt="Foto" data-bs-toggle="modal" data-bs-target="#fotoAdm{{ $item->id }}">
+                                    <img src="{{ route('media.public', ['path' => $item->foto], false) }}" class="rounded" style="height:40px; width:40px; object-fit:cover; cursor:pointer;" alt="Foto" data-bs-toggle="modal" data-bs-target="#fotoAdm{{ $item->id }}">
                                 @else
                                     <span class="text-muted">-</span>
                                 @endif
@@ -190,7 +190,7 @@
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body text-center p-2">
-                            <img src="{{ route('media.public', ['path' => $item->foto]) }}" class="img-fluid rounded-3" style="max-height:70vh;" alt="Foto Absensi">
+                            <img src="{{ route('media.public', ['path' => $item->foto], false) }}" class="img-fluid rounded-3" style="max-height:70vh;" alt="Foto Absensi">
                         </div>
                     </div>
                 </div>
