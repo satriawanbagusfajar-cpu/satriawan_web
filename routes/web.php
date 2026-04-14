@@ -16,6 +16,7 @@ use App\Http\Controllers\Siswa\DokumentasiController;
 use App\Http\Controllers\Siswa\JurnalController as SiswaJurnalController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 
 Route::get('/', function () {
@@ -141,3 +142,14 @@ if (app()->environment('local')) {
         ]);
     });
 }
+
+// Fallback untuk hosting yang belum memiliki symbolic link public/storage.
+Route::get('/storage/{path}', function (string $path) {
+    $normalizedPath = str_replace('\\', '/', $path);
+
+    if (str_contains($normalizedPath, '..') || ! Storage::disk('public')->exists($normalizedPath)) {
+        abort(404);
+    }
+
+    return response()->file(Storage::disk('public')->path($normalizedPath));
+})->where('path', '.*')->name('storage.public');
