@@ -48,7 +48,7 @@ class AbsensiController extends Controller
             $byDate = $siswaAbsensi->keyBy(fn ($a) => Carbon::parse($a->tanggal)->toDateString());
 
             $harian = [];
-            $totals = ['hadir' => 0, 'izin' => 0, 'sakit' => 0, 'alpha' => 0];
+            $totals = ['hadir' => 0, 'izin' => 0, 'sakit' => 0, 'terlambat' => 0, 'alpha' => 0];
             foreach ($dates as $date) {
                 $status = $byDate->has($date) ? $byDate[$date]->status : null;
                 $harian[$date] = $status;
@@ -64,7 +64,7 @@ class AbsensiController extends Controller
             ];
         }
 
-        $grandTotal = ['hadir' => 0, 'izin' => 0, 'sakit' => 0, 'alpha' => 0];
+        $grandTotal = ['hadir' => 0, 'izin' => 0, 'sakit' => 0, 'terlambat' => 0, 'alpha' => 0];
         foreach ($rekapRows as $r) {
             foreach ($grandTotal as $key => &$val) {
                 $val += $r['totals'][$key];
@@ -76,6 +76,8 @@ class AbsensiController extends Controller
 
     public function index(Request $request): View
     {
+        Absensi::ensureAutoAlphaForToday();
+
         $query = Absensi::with('siswa.perusahaan')->latest('tanggal');
 
         if ($request->filled('siswa_id')) {
@@ -157,6 +159,7 @@ class AbsensiController extends Controller
             $header[] = 'Total Hadir';
             $header[] = 'Total Izin';
             $header[] = 'Total Sakit';
+            $header[] = 'Total Terlambat';
             $header[] = 'Total Alpha';
             fputcsv($output, $header);
 
@@ -174,6 +177,7 @@ class AbsensiController extends Controller
                         'hadir' => 'H',
                         'izin' => 'I',
                         'sakit' => 'S',
+                        'terlambat' => 'T',
                         'alpha' => 'A',
                         default => '-',
                     };
@@ -182,6 +186,7 @@ class AbsensiController extends Controller
                 $csvRow[] = $row['totals']['hadir'];
                 $csvRow[] = $row['totals']['izin'];
                 $csvRow[] = $row['totals']['sakit'];
+                $csvRow[] = $row['totals']['terlambat'];
                 $csvRow[] = $row['totals']['alpha'];
                 fputcsv($output, $csvRow);
             }
@@ -208,7 +213,7 @@ class AbsensiController extends Controller
             ->orderBy('tanggal')
             ->get();
 
-        $totals = ['hadir' => 0, 'izin' => 0, 'sakit' => 0, 'alpha' => 0];
+        $totals = ['hadir' => 0, 'izin' => 0, 'sakit' => 0, 'terlambat' => 0, 'alpha' => 0];
         foreach ($absensi as $a) {
             if (isset($totals[$a->status])) {
                 $totals[$a->status]++;

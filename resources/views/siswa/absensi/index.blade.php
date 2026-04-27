@@ -14,7 +14,7 @@
         </div>
         <div class="text-md-end">
             <div class="fw-semibold">Jam kerja</div>
-            <div class="text-muted small">07:00 - 16:00</div>
+            <div class="text-muted small">Check-in 00:00 - 07:00 | Check-out 16:00 - 18:00</div>
         </div>
     </div>
 </div>
@@ -26,17 +26,16 @@
     </div>
 @endif
 
-@if(session('auto_checkout'))
-    <div class="alert-modern alert-info mb-4">
-        <i class="bi bi-info-circle-fill fs-5"></i>
-        <span>{{ session('auto_checkout') }}</span>
-    </div>
-@endif
-
 @if(session('error'))
     <div class="alert-modern alert-danger mb-4">
         <i class="bi bi-exclamation-triangle-fill fs-5"></i>
         <span>{{ session('error') }}</span>
+    </div>
+@endif
+
+@if(!$canCheckin)
+    <div class="alert alert-warning border mb-4">
+        <i class="bi bi-clock-history me-2"></i>Waktu check-in sudah lewat. Check-in hanya tersedia dari jam 00:00 sampai 07:00.
     </div>
 @endif
 
@@ -57,13 +56,18 @@
             <div class="col-md-4">
                 <form action="{{ route('siswa.absensi.checkin') }}" method="POST" enctype="multipart/form-data" id="checkinForm">
                     @csrf
-                    <button type="button" class="btn btn-lg w-100 text-white py-3" style="background: linear-gradient(135deg, #10b981, #34d399); border:none; border-radius:16px;" onclick="document.getElementById('fotoCheckin').click()">
+                    <button type="button" class="btn btn-lg w-100 text-white py-3" style="background: linear-gradient(135deg, #10b981, #34d399); border:none; border-radius:16px; {{ !$canCheckin ? 'opacity:.6; cursor:not-allowed;' : '' }}" onclick="{{ $canCheckin ? 'prepareCheckin()' : 'alert(\'Check-in ditutup setelah jam 07:00.\')' }}" {{ !$canCheckin ? 'disabled' : '' }}>
                         <i class="bi bi-camera-fill fs-3 d-block mb-1"></i>
                         <span class="fw-bold">Check In + Foto</span>
                         <small class="d-block opacity-75">Hadir &middot; Upload bukti di lokasi</small>
                     </button>
+                    <input type="hidden" name="lokasi" id="lokasiCheckin" required>
+                    <input type="hidden" name="latitude" id="latitudeCheckin">
+                    <input type="hidden" name="longitude" id="longitudeCheckin">
                     <input type="file" name="foto" id="fotoCheckin" accept="image/jpeg,image/png" capture="environment" class="d-none" required onchange="document.getElementById('checkinForm').submit()">
                     @error('foto')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
+                    @error('lokasi')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
+                    <div class="text-muted small mt-2" id="lokasiInfo">{{ $canCheckin ? 'Lokasi belum diambil.' : 'Check-in ditutup setelah jam 07:00.' }}</div>
                 </form>
             </div>
 
@@ -97,7 +101,7 @@
 </div>
 
 {{-- ==================== SUDAH CHECK-IN, BELUM CHECK-OUT ==================== --}}
-@elseif($hariIni->status === 'hadir' && $hariIni->jam_masuk && !$hariIni->jam_keluar)
+@elseif(in_array($hariIni->status, ['hadir', 'terlambat']) && $hariIni->jam_masuk && !$hariIni->jam_keluar)
 <div class="card card-modern mb-4">
     <div class="card-body p-4">
         <div class="text-center mb-4">
@@ -122,19 +126,22 @@
             <div class="col-md-5">
                 <form action="{{ route('siswa.absensi.checkout') }}" method="POST">
                     @csrf
-                    <button type="submit" class="btn btn-lg w-100 text-white py-3" style="background: linear-gradient(135deg, #ef4444, #f87171); border:none; border-radius:16px;" onclick="return confirm('Yakin ingin check-out sekarang?')">
+                    <button type="submit" class="btn btn-lg w-100 text-white py-3" style="background: linear-gradient(135deg, #ef4444, #f87171); border:none; border-radius:16px; {{ !$canCheckout ? 'opacity:.6; cursor:not-allowed;' : '' }}" onclick="{{ $canCheckout ? 'return confirm(\'Yakin ingin check-out sekarang?\')' : 'alert(\'Check-out hanya bisa dilakukan dari jam 16:00 sampai 18:00.\'); return false;' }}" {{ !$canCheckout ? 'disabled' : '' }}>
                         <i class="bi bi-box-arrow-right fs-3 d-block mb-1"></i>
                         <span class="fw-bold">Check Out</span>
                         <small class="d-block opacity-75">Catat Jam Keluar</small>
                     </button>
                 </form>
+                @if(!$canCheckout)
+                    <div class="text-muted small mt-2 text-center">Check-out hanya tersedia dari jam 16:00 sampai 18:00.</div>
+                @endif
             </div>
         </div>
     </div>
 </div>
 
 {{-- ==================== SUDAH SELESAI (Check-in & Check-out) ==================== --}}
-@elseif($hariIni->status === 'hadir' && $hariIni->jam_masuk && $hariIni->jam_keluar)
+@elseif(in_array($hariIni->status, ['hadir', 'terlambat']) && $hariIni->jam_masuk && $hariIni->jam_keluar)
 <div class="card card-modern mb-4">
     <div class="card-body p-4 text-center">
         <div class="stat-icon text-white mx-auto mb-3" style="background: linear-gradient(135deg, #10b981, #34d399); width:64px; height:64px; font-size:1.8rem;">
@@ -172,8 +179,8 @@
 @else
 <div class="card card-modern mb-4">
     <div class="card-body p-4 text-center">
-        @php $statusIcons = ['izin' => 'envelope-paper', 'sakit' => 'thermometer-half', 'alpha' => 'x-circle']; @endphp
-        @php $statusGrad = ['izin' => 'linear-gradient(135deg, #f59e0b, #fbbf24)', 'sakit' => 'linear-gradient(135deg, #06b6d4, #22d3ee)', 'alpha' => 'linear-gradient(135deg, #ef4444, #f87171)']; @endphp
+        @php $statusIcons = ['izin' => 'envelope-paper', 'sakit' => 'thermometer-half', 'alpha' => 'x-circle', 'terlambat' => 'alarm']; @endphp
+        @php $statusGrad = ['izin' => 'linear-gradient(135deg, #f59e0b, #fbbf24)', 'sakit' => 'linear-gradient(135deg, #06b6d4, #22d3ee)', 'alpha' => 'linear-gradient(135deg, #ef4444, #f87171)', 'terlambat' => 'linear-gradient(135deg, #f97316, #fb923c)']; @endphp
         <div class="stat-icon text-white mx-auto mb-3" style="background: {{ $statusGrad[$hariIni->status] ?? 'linear-gradient(135deg, #FF8C42, #FF6B35)' }}; width:64px; height:64px; font-size:1.8rem;">
             <i class="bi bi-{{ $statusIcons[$hariIni->status] ?? 'calendar-x' }}"></i>
         </div>
@@ -212,7 +219,9 @@
                     <th>Jam Masuk</th>
                     <th>Jam Keluar</th>
                     <th>Foto</th>
+                    <th>Lokasi</th>
                     <th>Status</th>
+                    <th>Approval</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -236,12 +245,22 @@
                             @endif
                         </td>
                         <td>
+                            @if($item->lokasi)
+                                <span class="small">{{ $item->lokasi }}</span>
+                            @else
+                                <span class="text-muted">-</span>
+                            @endif
+                        </td>
+                        <td>
                             <span class="badge-status badge-{{ $item->badge_waktu }}">{{ $item->keterangan_waktu }}</span>
+                        </td>
+                        <td>
+                            <span class="badge bg-{{ $item->approval_badge_class }}">{{ ucfirst($item->approval_status ?? 'pending') }}</span>
                         </td>
                     </tr>
 
                 @empty
-                    <tr><td colspan="6" class="empty-state"><i class="bi bi-inbox"></i><p>Belum ada riwayat absensi.</p></td></tr>
+                    <tr><td colspan="8" class="empty-state"><i class="bi bi-inbox"></i><p>Belum ada riwayat absensi.</p></td></tr>
                 @endforelse
                 </tbody>
             </table>
@@ -289,4 +308,40 @@
     </div>
 </div>
 @endif
+
+<script>
+function prepareCheckin() {
+    const info = document.getElementById('lokasiInfo');
+    const lokasiInput = document.getElementById('lokasiCheckin');
+    const latitudeInput = document.getElementById('latitudeCheckin');
+    const longitudeInput = document.getElementById('longitudeCheckin');
+    const fotoInput = document.getElementById('fotoCheckin');
+
+    if (!navigator.geolocation) {
+        alert('Perangkat tidak mendukung GPS. Aktifkan perangkat/location service lalu coba lagi.');
+        return;
+    }
+
+    info.textContent = 'Mengambil lokasi...';
+
+    navigator.geolocation.getCurrentPosition(function (position) {
+        const lat = Number(position.coords.latitude).toFixed(6);
+        const lng = Number(position.coords.longitude).toFixed(6);
+
+        latitudeInput.value = lat;
+        longitudeInput.value = lng;
+        lokasiInput.value = lat + ', ' + lng;
+        info.textContent = 'Lokasi siap: ' + lokasiInput.value;
+
+        fotoInput.click();
+    }, function () {
+        info.textContent = 'Lokasi gagal diambil.';
+        alert('Lokasi wajib untuk absensi. Izinkan akses lokasi kemudian coba lagi.');
+    }, {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+    });
+}
+</script>
 @endsection

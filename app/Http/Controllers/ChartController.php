@@ -40,9 +40,10 @@ class ChartController extends Controller
         $rekap = $query->selectRaw('status, COUNT(*) as total')->groupBy('status')->pluck('total', 'status');
 
         return [
-            'labels' => ['Hadir', 'Izin', 'Sakit', 'Alpha'],
+            'labels' => ['Hadir', 'Terlambat', 'Izin', 'Sakit', 'Alpha'],
             'values' => [
                 (int) $rekap->get('hadir', 0),
+                (int) $rekap->get('terlambat', 0),
                 (int) $rekap->get('izin', 0),
                 (int) $rekap->get('sakit', 0),
                 (int) $rekap->get('alpha', 0),
@@ -65,6 +66,7 @@ class ChartController extends Controller
 
         $namaBulan = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
         $hadir = array_fill(0, 12, 0);
+        $terlambat = array_fill(0, 12, 0);
         $izin = array_fill(0, 12, 0);
         $sakit = array_fill(0, 12, 0);
         $alpha = array_fill(0, 12, 0);
@@ -73,6 +75,7 @@ class ChartController extends Controller
             $idx = Carbon::parse($row->tanggal)->month - 1;
             match ($row->status) {
                 'hadir' => $hadir[$idx]++,
+                'terlambat' => $terlambat[$idx]++,
                 'izin' => $izin[$idx]++,
                 'sakit' => $sakit[$idx]++,
                 'alpha' => $alpha[$idx]++,
@@ -84,6 +87,7 @@ class ChartController extends Controller
             'labels' => $namaBulan,
             'tahun' => $tahun,
             'hadir' => $hadir,
+            'terlambat' => $terlambat,
             'izin' => $izin,
             'sakit' => $sakit,
             'alpha' => $alpha,

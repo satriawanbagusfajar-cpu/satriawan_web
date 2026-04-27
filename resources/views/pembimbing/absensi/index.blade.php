@@ -25,30 +25,42 @@
                     @endforeach
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label for="status" class="form-label">Status</label>
                 <select class="form-select" id="status" name="status">
                     <option value="">-- Semua Status --</option>
                     <option value="hadir" {{ $filterStatus === 'hadir' ? 'selected' : '' }}>Hadir</option>
+                    <option value="terlambat" {{ $filterStatus === 'terlambat' ? 'selected' : '' }}>Terlambat</option>
                     <option value="sakit" {{ $filterStatus === 'sakit' ? 'selected' : '' }}>Sakit</option>
                     <option value="izin" {{ $filterStatus === 'izin' ? 'selected' : '' }}>Izin</option>
                     <option value="alpha" {{ $filterStatus === 'alpha' ? 'selected' : '' }}>Alpha</option>
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label for="tanggal" class="form-label">Tanggal</label>
                 <input type="date" class="form-control" id="tanggal" name="tanggal" value="{{ $filterTanggal }}">
             </div>
-            <div class="col-md-3 d-flex align-items-end gap-2">
+            <div class="col-md-2">
+                <label for="approval_status" class="form-label">Approval</label>
+                <select class="form-select" id="approval_status" name="approval_status">
+                    <option value="">-- Semua --</option>
+                    <option value="pending" {{ $filterApproval === 'pending' ? 'selected' : '' }}>Pending</option>
+                    <option value="approved" {{ $filterApproval === 'approved' ? 'selected' : '' }}>Approved</option>
+                    <option value="rejected" {{ $filterApproval === 'rejected' ? 'selected' : '' }}>Rejected</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end gap-2">
                 <button type="submit" class="btn btn-primary flex-grow-1">
                     <i class="bi bi-search me-1"></i>Cari
                 </button>
                 <a href="{{ route('pembimbing.absensi.index') }}" class="btn btn-outline-secondary">
                     <i class="bi bi-arrow-clockwise"></i>
                 </a>
-                <a href="{{ route('pembimbing.absensi.downloadPdf', request()->query()) }}" class="btn btn-outline-success" title="Download PDF">
-                    <i class="bi bi-file-pdf"></i>
-                </a>
+                @if($canApprove)
+                    <a href="{{ route('pembimbing.absensi.downloadPdf', request()->query()) }}" class="btn btn-outline-success" title="Download PDF">
+                        <i class="bi bi-file-pdf"></i>
+                    </a>
+                @endif
             </div>
         </form>
     </div>
@@ -72,8 +84,13 @@
                             <th>Nama Siswa</th>
                             <th>Jam Masuk</th>
                             <th>Jam Keluar</th>
+                            <th>Lokasi</th>
+                            <th>Foto</th>
                             <th>Status</th>
-                            <th>Keterangan Waktu</th>
+                            <th>Approval</th>
+                            @if($canApprove)
+                                <th>Aksi</th>
+                            @endif
                         </tr>
                     </thead>
                     <tbody>
@@ -83,20 +100,37 @@
                                 <td class="fw-semibold">{{ $item->siswa->nama }}</td>
                                 <td>{{ $item->jam_masuk ?? '-' }}</td>
                                 <td>{{ $item->jam_keluar ?? '-' }}</td>
+                                <td><small>{{ $item->lokasi ?? '-' }}</small></td>
                                 <td>
-                                    <span class="badge {{ $item->status === 'hadir' ? 'bg-success' : ($item->status === 'sakit' ? 'bg-warning' : ($item->status === 'izin' ? 'bg-info' : 'bg-danger')) }}">
+                                    @if($item->foto)
+                                        <img src="{{ route('media.public', ['path' => $item->foto], false) }}" alt="Foto Absensi" style="height:40px; width:40px; object-fit:cover; border-radius:6px;">
+                                    @else
+                                        -
+                                    @endif
+                                </td>
+                                <td>
+                                    <span class="badge {{ in_array($item->status, ['hadir', 'terlambat']) ? ($item->isTerlambat() ? 'bg-warning' : 'bg-success') : ($item->status === 'sakit' ? 'bg-info' : ($item->status === 'izin' ? 'bg-primary' : 'bg-danger')) }}">
                                         {{ ucfirst($item->status) }}
                                     </span>
                                 </td>
-                                <td>
-                                    @if($item->status === 'hadir')
-                                        <span class="badge {{ $item->isTerlambat() ? 'bg-warning' : 'bg-success' }}">
-                                            {{ $item->isTerlambat() ? 'Telat' : 'Tepat Waktu' }}
-                                        </span>
-                                    @else
-                                        <span class="text-muted">{{ ucfirst($item->status) }}</span>
-                                    @endif
-                                </td>
+                                <td><span class="badge bg-{{ $item->approval_badge_class }}">{{ ucfirst($item->approval_status ?? 'pending') }}</span></td>
+                                @if($canApprove)
+                                    <td>
+                                        @if(($item->approval_status ?? 'pending') === 'pending')
+                                            <form action="{{ route('pembimbing.absensi.approve', $item) }}" method="POST" class="d-inline">
+                                                @csrf
+                                                <button type="submit" class="btn btn-sm btn-success">Approve</button>
+                                            </form>
+                                            <form action="{{ route('pembimbing.absensi.reject', $item) }}" method="POST" class="d-inline" onsubmit="return submitRejectReason(this)">
+                                                @csrf
+                                                <input type="hidden" name="approval_notes">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">Tolak</button>
+                                            </form>
+                                        @else
+                                            <small class="text-muted">{{ $item->approval_notes ?: '-' }}</small>
+                                        @endif
+                                    </td>
+                                @endif
                             </tr>
                         @endforeach
                     </tbody>
@@ -108,4 +142,16 @@
         @endif
     </div>
 </div>
+
+<script>
+function submitRejectReason(form) {
+    const reason = prompt('Masukkan alasan penolakan absensi:');
+    if (!reason) {
+        return false;
+    }
+
+    form.querySelector('input[name="approval_notes"]').value = reason;
+    return true;
+}
+</script>
 @endsection

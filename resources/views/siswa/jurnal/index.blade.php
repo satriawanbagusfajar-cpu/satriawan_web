@@ -56,6 +56,7 @@
                     <th width="130">Tanggal</th>
                     <th>Kegiatan</th>
                     <th>Keterangan</th>
+                    <th>Approval</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -64,9 +65,12 @@
                         <td>{{ \Carbon\Carbon::parse($item->tanggal)->format('d M Y') }}</td>
                         <td>{{ $item->kegiatan }}</td>
                         <td>{{ $item->keterangan ?? '-' }}</td>
+                        <td>
+                            <span class="badge bg-{{ $item->approval_badge_class }}">{{ ucfirst($item->approval_status ?? 'pending') }}</span>
+                        </td>
                     </tr>
                 @empty
-                    <tr><td colspan="3" class="empty-state"><i class="bi bi-inbox"></i><p>Belum ada jurnal.</p></td></tr>
+                    <tr><td colspan="4" class="empty-state"><i class="bi bi-inbox"></i><p>Belum ada jurnal.</p></td></tr>
                 @endforelse
                 </tbody>
             </table>

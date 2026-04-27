@@ -3,12 +3,9 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Models\Siswa;
-use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
 
 class AuthController extends Controller
@@ -35,6 +32,21 @@ class AuthController extends Controller
 
         $userRole = Auth::user()->role;
 
+        if ($userRole === 'siswa') {
+            $accessEnd = now()->copy()->setTimeFromTimeString('18:00:00');
+
+            if (now()->gt($accessEnd)) {
+                Auth::logout();
+
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                return back()->withErrors([
+                    'email' => 'Login siswa hanya diizinkan sampai jam 18:00.',
+                ])->onlyInput('email');
+            }
+        }
+
         if ($userRole === 'admin') {
             return redirect()->route('admin.dashboard');
         } elseif ($userRole === 'guru_pembimbing' || $userRole === 'pembimbing_perusahaan') {
@@ -42,40 +54,6 @@ class AuthController extends Controller
         } else {
             return redirect()->route('siswa.dashboard');
         }
-    }
-
-    public function showRegister(): View
-    {
-        return view('auth.register');
-    }
-
-    public function register(Request $request): RedirectResponse
-    {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'unique:users'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
-        ]);
-
-        $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-            'role' => 'siswa',
-        ]);
-
-        // Buat record siswa yang terhubung dengan user
-        Siswa::create([
-            'user_id' => $user->id,
-            'nama' => $user->name,
-            'nis' => 'temp-' . $user->id,
-            'kelas' => '-',
-            'jurusan' => '-',
-        ]);
-
-        Auth::login($user);
-
-        return redirect()->route('siswa.dashboard');
     }
 
     public function logout(Request $request): RedirectResponse

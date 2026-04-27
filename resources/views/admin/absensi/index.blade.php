@@ -115,6 +115,8 @@
                     <th>Jam Masuk</th>
                     <th>Jam Keluar</th>
                     <th>Foto</th>
+                    <th>Lokasi</th>
+                    <th>Approval</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -130,7 +132,7 @@
                         $companyColor = $companyBadgeColors[crc32($companyName) % count($companyBadgeColors)];
                     @endphp
                     <tr class="table-light">
-                        <td colspan="8" class="fw-bold">
+                        <td colspan="10" class="fw-bold">
                             <i class="bi bi-building me-1"></i>
                             {{ $companyName }}
                             <span class="badge bg-dark-subtle text-dark ms-2">{{ $rows->count() }} data</span>
@@ -145,7 +147,7 @@
                             </td>
                             <td>{{ \Carbon\Carbon::parse($item->tanggal)->format('d M Y') }}</td>
                             <td>
-                                <span class="badge-status badge-{{ $statusColors[$item->status] ?? 'secondary' }}">{{ ucfirst($item->status) }}</span>
+                                <span class="badge-status badge-{{ $item->status === 'terlambat' ? 'warning' : ($statusColors[$item->status] ?? 'secondary') }}">{{ ucfirst($item->status) }}</span>
                             </td>
                             <td>
                                 @if($item->status === 'hadir')
@@ -170,11 +172,13 @@
                                     <span class="text-muted">-</span>
                                 @endif
                             </td>
+                            <td><small>{{ $item->lokasi ?? '-' }}</small></td>
+                            <td><span class="badge bg-{{ $item->approval_badge_class }}">{{ ucfirst($item->approval_status ?? 'pending') }}</span></td>
                         </tr>
                     @endforeach
 
                 @empty
-                    <tr><td colspan="8" class="empty-state"><i class="bi bi-inbox"></i><p>Belum ada data absensi.</p></td></tr>
+                    <tr><td colspan="10" class="empty-state"><i class="bi bi-inbox"></i><p>Belum ada data absensi.</p></td></tr>
                 @endforelse
                 </tbody>
             </table>

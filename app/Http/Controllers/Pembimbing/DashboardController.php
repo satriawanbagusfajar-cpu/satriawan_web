@@ -31,11 +31,25 @@ class DashboardController extends Controller
         $totalAbsensi = Absensi::whereIn('siswa_id', $siswaBimbingan->pluck('id'))->count();
         $totalJurnal = Jurnal::whereIn('siswa_id', $siswaBimbingan->pluck('id'))->count();
 
+        $pendingAbsensi = 0;
+        $pendingJurnal = 0;
+        if ($user->role === 'pembimbing_perusahaan') {
+            $pendingAbsensi = Absensi::whereIn('siswa_id', $siswaBimbingan->pluck('id'))
+                ->where('approval_status', 'pending')
+                ->count();
+
+            $pendingJurnal = Jurnal::whereIn('siswa_id', $siswaBimbingan->pluck('id'))
+                ->where('approval_status', 'pending')
+                ->count();
+        }
+
         return view('pembimbing.dashboard', [
             'siswaBimbingan' => $siswaBimbingan,
             'totalSiswa' => $totalSiswa,
             'totalAbsensi' => $totalAbsensi,
             'totalJurnal' => $totalJurnal,
+            'pendingAbsensi' => $pendingAbsensi,
+            'pendingJurnal' => $pendingJurnal,
         ]);
     }
 }

@@ -75,7 +75,7 @@
 
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(5, 1fr);
             gap: 15px;
             margin-bottom: 20px;
         }
@@ -136,6 +136,15 @@
 
         .stat-card.alpha .stat-value {
             color: #ef4444;
+        }
+
+        .stat-card.terlambat {
+            border-color: #f97316;
+            background: #fff7ed;
+        }
+
+        .stat-card.terlambat .stat-value {
+            color: #f97316;
         }
 
         .attendance-section {
@@ -205,6 +214,11 @@
         .status-alpha {
             background: #fee2e2;
             color: #7f1d1d;
+        }
+
+        .status-terlambat {
+            background: #ffedd5;
+            color: #9a3412;
         }
 
         .status-telat {
@@ -299,6 +313,10 @@
                     <div class="stat-label">Sakit</div>
                     <div class="stat-value">{{ $totals['sakit'] }}</div>
                 </div>
+                <div class="stat-card terlambat">
+                    <div class="stat-label">Terlambat</div>
+                    <div class="stat-value">{{ $totals['terlambat'] }}</div>
+                </div>
                 <div class="stat-card alpha">
                     <div class="stat-label">Alfa</div>
                     <div class="stat-value">{{ $totals['alpha'] }}</div>
@@ -335,7 +353,7 @@
                                 <td>{{ $item->jam_masuk ?? '-' }}</td>
                                 <td>{{ $item->jam_keluar ?? '-' }}</td>
                                 <td>
-                                    @if($item->status === 'hadir')
+                                    @if(in_array($item->status, ['hadir', 'terlambat'], true))
                                         @if($item->isTerlambat())
                                             <span class="status-badge status-telat">Telat</span>
                                         @else

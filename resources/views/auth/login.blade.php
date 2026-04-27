@@ -260,8 +260,15 @@
                 </form>
 
                 <p class="text-center mt-4" style="font-size:.85rem;">
-                    Belum punya akun? <a href="{{ route('register') }}" style="color:#FF8C42;text-decoration:none;font-weight:600;">Daftar sekarang</a>
+                    Akun siswa dibuat oleh admin sekolah. Hubungi admin jika belum memiliki akun.
                 </p>
+
+                <div class="text-center mb-3" style="font-size:.85rem;">
+                    <span class="text-muted d-block mb-1">Contact Person</span>
+                    <a href="https://wa.me/6281234567890" target="_blank" rel="noopener" style="color:#FF8C42;text-decoration:none;font-weight:600;">
+                        <i class="bi bi-whatsapp"></i> Admin PKL - 0812-3456-7890
+                    </a>
+                </div>
 
                 <p class="text-center text-muted mb-0" style="font-size:.8rem;">&copy; {{ date('Y') }} PKL SMK Fatahillah</p>
             </div>

@@ -12,16 +12,62 @@ use Illuminate\View\View;
 
 class AbsensiController extends Controller
 {
-    public function index(Request $request): View
+    private const CHECKIN_START = '00:00:00';
+    private const CHECKIN_END = '07:00:00';
+    private const CHECKOUT_START = '16:00:00';
+    private const ACCESS_END = '18:00:00';
+
+    private function buildTodayTime(string $time): Carbon
+    {
+        return now()->copy()->setTimeFromTimeString($time);
+    }
+
+    private function canCheckinNow(): bool
+    {
+        $now = now();
+
+        return $now->betweenIncluded(
+            $this->buildTodayTime(self::CHECKIN_START),
+            $this->buildTodayTime(self::CHECKIN_END),
+        );
+    }
+
+    private function canCheckoutNow(): bool
+    {
+        $now = now();
+
+        return $now->betweenIncluded(
+            $this->buildTodayTime(self::CHECKOUT_START),
+            $this->buildTodayTime(self::ACCESS_END),
+        );
+    }
+
+    private function isAutoAlphaRecord(Absensi $absensi): bool
+    {
+        if (! Absensi::hasColumn('approval_notes')) {
+            return $absensi->status === 'alpha' && ! $absensi->jam_masuk && ! $absensi->jam_keluar;
+        }
+
+        return $absensi->status === 'alpha'
+            && ! $absensi->jam_masuk
+            && ! $absensi->jam_keluar
+            && str_contains((string) $absensi->approval_notes, 'alpha otomatis');
+    }
+
+    public function index(Request $request): View|RedirectResponse
     {
         $siswa = $request->user()->siswa;
         abort_unless($siswa, 403, 'Akun siswa belum terhubung ke data siswa.');
 
+        if (now()->gt($this->buildTodayTime(self::ACCESS_END))) {
+            return redirect()->route('siswa.dashboard')
+                ->with('error', 'Halaman absensi siswa hanya bisa diakses sampai jam 18:00.');
+        }
+
+        Absensi::ensureAutoAlphaForToday();
+
         $mingguIniMulai = now()->startOfWeek(Carbon::MONDAY)->startOfDay();
         $mingguIniSelesai = now()->endOfWeek(Carbon::SUNDAY)->endOfDay();
-
-        // Auto checkout setelah jam 16:00
-        $this->autoCheckout($siswa);
 
         $perPage = (int) $request->get('per_page', 5);
         $riwayat = Absensi::where('siswa_id', $siswa->id)
@@ -31,30 +77,10 @@ class AbsensiController extends Controller
 
         $hariIni = Absensi::where('siswa_id', $siswa->id)->whereDate('tanggal', now()->toDateString())->first();
 
-        return view('siswa.absensi.index', compact('riwayat', 'hariIni', 'mingguIniMulai', 'mingguIniSelesai'));
-    }
+        $canCheckin = $this->canCheckinNow();
+        $canCheckout = $this->canCheckoutNow();
 
-    /**
-     * Auto checkout setelah jam kerja (16:00)
-     */
-    private function autoCheckout($siswa): void
-    {
-        $today = now()->toDateString();
-        $currentTime = now();
-        $workEndTime = $currentTime->copy()->setTime(16, 0, 0);
-
-        // Cek apakah sudah lewat jam 16:00
-        if ($currentTime->greaterThanOrEqualTo($workEndTime)) {
-            $absensi = Absensi::where('siswa_id', $siswa->id)
-                ->whereDate('tanggal', $today)
-                ->first();
-
-            // Jika sudah checkin dan belum checkout, maka auto checkout
-            if ($absensi && $absensi->status === 'hadir' && $absensi->jam_masuk && !$absensi->jam_keluar) {
-                $absensi->update(['jam_keluar' => now()->format('H:i:s')]);
-                session()->flash('auto_checkout', 'Check-out otomatis: Anda sudah melewati jam kerja (16:00), sistem melakukan check-out otomatis.');
-            }
-        }
+        return view('siswa.absensi.index', compact('riwayat', 'hariIni', 'mingguIniMulai', 'mingguIniSelesai', 'canCheckin', 'canCheckout'));
     }
 
     /**
@@ -65,16 +91,31 @@ class AbsensiController extends Controller
         $siswa = $request->user()->siswa;
         abort_unless($siswa, 403);
 
+        if (now()->gt($this->buildTodayTime(self::ACCESS_END))) {
+            return redirect()->route('siswa.dashboard')
+                ->with('error', 'Akses absensi siswa sudah ditutup setelah jam 18:00.');
+        }
+
+        if (! $this->canCheckinNow()) {
+            return back()->with('error', 'Check-in hanya dapat dilakukan dari jam 00:00 sampai 07:00.');
+        }
+
         $request->validate([
             'foto' => ['required', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
+            'lokasi' => ['required', 'string', 'max:255'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
         ]);
 
         $today = now()->toDateString();
         $nowTime = now()->format('H:i:s');
+        $status = 'hadir';
 
         $existing = Absensi::where('siswa_id', $siswa->id)->whereDate('tanggal', $today)->first();
         if ($existing) {
-            return back()->with('error', 'Anda sudah melakukan absensi hari ini.');
+            if (! $this->isAutoAlphaRecord($existing)) {
+                return back()->with('error', 'Anda sudah melakukan absensi hari ini.');
+            }
         }
 
         $relativeDir = 'absensi/' . $siswa->id;
@@ -88,13 +129,29 @@ class AbsensiController extends Controller
         $request->file('foto')->move($targetDir, $filename);
         $path = $relativeDir . '/' . $filename;
 
-        Absensi::create([
+        $payload = [
             'siswa_id' => $siswa->id,
             'tanggal' => $today,
-            'status' => 'hadir',
+            'status' => $status,
             'jam_masuk' => $nowTime,
+            'jam_keluar' => null,
             'foto' => $path,
-        ]);
+            'lokasi' => $request->string('lokasi')->toString(),
+            'latitude' => $request->filled('latitude') ? (float) $request->input('latitude') : null,
+            'longitude' => $request->filled('longitude') ? (float) $request->input('longitude') : null,
+            'approval_status' => 'pending',
+            'approved_by' => null,
+            'approved_at' => null,
+            'approval_notes' => null,
+        ];
+
+        $payload = Absensi::keepExistingColumns($payload);
+
+        if ($existing && $this->isAutoAlphaRecord($existing)) {
+            $existing->update($payload);
+        } else {
+            Absensi::create($payload);
+        }
 
         return back()->with('success', 'Check-in berhasil! Jam masuk: ' . $nowTime);
     }
@@ -107,12 +164,25 @@ class AbsensiController extends Controller
         $siswa = $request->user()->siswa;
         abort_unless($siswa, 403);
 
+        if (now()->gt($this->buildTodayTime(self::ACCESS_END))) {
+            return redirect()->route('siswa.dashboard')
+                ->with('error', 'Akses absensi siswa sudah ditutup setelah jam 18:00.');
+        }
+
+        if (now()->lt($this->buildTodayTime(self::CHECKOUT_START))) {
+            return back()->with('error', 'Check-out hanya bisa dilakukan mulai jam 16:00.');
+        }
+
+        if (! $this->canCheckoutNow()) {
+            return back()->with('error', 'Check-out ditutup setelah jam 18:00.');
+        }
+
         $today = now()->toDateString();
         $nowTime = now()->format('H:i:s');
 
         $absensi = Absensi::where('siswa_id', $siswa->id)->whereDate('tanggal', $today)->first();
 
-        if (! $absensi || $absensi->status !== 'hadir') {
+        if (! $absensi || ! in_array($absensi->status, ['hadir', 'terlambat'], true)) {
             return back()->with('error', 'Anda belum check-in hari ini.');
         }
 
@@ -133,6 +203,11 @@ class AbsensiController extends Controller
         $siswa = $request->user()->siswa;
         abort_unless($siswa, 403);
 
+        if (now()->gt($this->buildTodayTime(self::ACCESS_END))) {
+            return redirect()->route('siswa.dashboard')
+                ->with('error', 'Akses absensi siswa sudah ditutup setelah jam 18:00.');
+        }
+
         $validated = $request->validate([
             'status' => ['required', 'in:izin,sakit'],
         ]);
@@ -141,16 +216,34 @@ class AbsensiController extends Controller
 
         $existing = Absensi::where('siswa_id', $siswa->id)->whereDate('tanggal', $today)->first();
         if ($existing) {
-            return back()->with('error', 'Anda sudah melakukan absensi hari ini.');
+            if (! $this->isAutoAlphaRecord($existing)) {
+                return back()->with('error', 'Anda sudah melakukan absensi hari ini.');
+            }
         }
 
-        Absensi::create([
+        $payload = [
             'siswa_id' => $siswa->id,
             'tanggal' => $today,
             'status' => $validated['status'],
             'jam_masuk' => null,
             'jam_keluar' => null,
-        ]);
+            'foto' => null,
+            'lokasi' => null,
+            'latitude' => null,
+            'longitude' => null,
+            'approval_status' => 'pending',
+            'approved_by' => null,
+            'approved_at' => null,
+            'approval_notes' => null,
+        ];
+
+        $payload = Absensi::keepExistingColumns($payload);
+
+        if ($existing && $this->isAutoAlphaRecord($existing)) {
+            $existing->update($payload);
+        } else {
+            Absensi::create($payload);
+        }
 
         return back()->with('success', 'Status ' . $validated['status'] . ' berhasil dicatat untuk hari ini.');
     }

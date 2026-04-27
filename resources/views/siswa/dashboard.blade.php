@@ -6,6 +6,21 @@
     <p class="text-muted mb-0">Selamat datang, {{ $siswa->nama }}</p>
 </div>
 
+@if(!empty($notifications))
+    <div class="card card-modern mb-4 fade-in">
+        <div class="card-body p-3">
+            <h6 class="fw-bold mb-3"><i class="bi bi-bell me-2" style="color:#FF8C42;"></i>Notifikasi</h6>
+            <div class="d-flex flex-column gap-2">
+                @foreach($notifications as $notif)
+                    <div class="alert alert-{{ $notif['type'] }} mb-0 py-2 px-3">
+                        <i class="bi bi-{{ $notif['icon'] }} me-2"></i>{{ $notif['message'] }}
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    </div>
+@endif
+
 <div class="card card-modern mb-4 fade-in">
     <div class="card-body p-4">
         <h5 class="fw-bold mb-3"><i class="bi bi-person-badge me-2" style="color:#FF8C42;"></i>Profil Siswa</h5>
@@ -25,6 +40,10 @@
             <div class="col-md-3 col-6">
                 <div class="text-muted small fw-semibold">Perusahaan</div>
                 <div class="fw-bold">{{ $siswa->perusahaan?->nama_perusahaan ?? '-' }}</div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="text-muted small fw-semibold">Pembimbing Perusahaan</div>
+                <div class="fw-bold">{{ $siswa->perusahaan?->pembimbingPerusahaan?->name ?? $siswa->perusahaan?->pembimbing ?? '-' }}</div>
             </div>
         </div>
     </div>

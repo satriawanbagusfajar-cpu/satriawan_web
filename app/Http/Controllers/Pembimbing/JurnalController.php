@@ -5,15 +5,18 @@ namespace App\Http\Controllers\Pembimbing;
 use App\Http\Controllers\Controller;
 use App\Models\Siswa;
 use App\Models\Jurnal;
+use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class JurnalController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
+        /** @var User $user */
         $user = Auth::user();
         
         // Ambil siswa yang dibimbing sesuai role
@@ -27,9 +30,10 @@ class JurnalController extends Controller
         }
 
         // Filter dan pencarian
-        $filterSiswa = request()->get('siswa');
-        $filterTanggal = request()->get('tanggal');
-        $filterBulan = request()->get('bulan');
+        $filterSiswa = $request->get('siswa');
+        $filterTanggal = $request->get('tanggal');
+        $filterBulan = $request->get('bulan');
+        $filterApproval = $request->get('approval_status');
 
         $query = Jurnal::whereIn('siswa_id', $siswaBimbingan->pluck('id'))
             ->with('siswa');
@@ -50,9 +54,13 @@ class JurnalController extends Controller
                   ->whereYear('tanggal', date('Y', strtotime($filterBulan)));
         }
 
+        if ($filterApproval) {
+            $query->where('approval_status', $filterApproval);
+        }
+
         $jurnal = $query->orderBy('tanggal', 'desc')
             ->paginate(15)
-            ->appends(request()->query());
+            ->appends($request->query());
 
         // Hitung statistik jurnal per siswa
         $jurnalStatistics = Jurnal::whereIn('siswa_id', $siswaBimbingan->pluck('id'))
@@ -67,15 +75,59 @@ class JurnalController extends Controller
             'filterSiswa' => $filterSiswa,
             'filterTanggal' => $filterTanggal,
             'filterBulan' => $filterBulan,
+            'filterApproval' => $filterApproval,
+            'canApprove' => $user->role === 'pembimbing_perusahaan',
         ]);
     }
 
-    public function downloadPdf()
+    public function approve(Request $request, Jurnal $jurnal): RedirectResponse
     {
+        $user = $request->user();
+        abort_unless($user && $user->role === 'pembimbing_perusahaan', 403, 'Hanya pembimbing perusahaan yang dapat menyetujui jurnal.');
+
+        if ($jurnal->approval_status === 'approved') {
+            return back()->with('error', 'Jurnal ini sudah disetujui sebelumnya.');
+        }
+
+        $jurnal->update([
+            'approval_status' => 'approved',
+            'approved_by' => $user->id,
+            'approved_at' => now(),
+            'approval_notes' => $request->input('approval_notes'),
+        ]);
+
+        return back()->with('success', 'Jurnal berhasil disetujui.');
+    }
+
+    public function reject(Request $request, Jurnal $jurnal): RedirectResponse
+    {
+        $user = $request->user();
+        abort_unless($user && $user->role === 'pembimbing_perusahaan', 403, 'Hanya pembimbing perusahaan yang dapat menolak jurnal.');
+
+        $validated = $request->validate([
+            'approval_notes' => ['required', 'string', 'max:255'],
+        ]);
+
+        $jurnal->update([
+            'approval_status' => 'rejected',
+            'approved_by' => $user->id,
+            'approved_at' => now(),
+            'approval_notes' => $validated['approval_notes'],
+        ]);
+
+        return back()->with('success', 'Jurnal berhasil ditolak.');
+    }
+
+    public function downloadPdf(Request $request)
+    {
+        /** @var User|null $user */
         $user = Auth::user();
-        $filterSiswa = request()->get('siswa');
-        $filterTanggal = request()->get('tanggal');
-        $filterBulan = request()->get('bulan');
+        abort_unless($user && $user->role === 'pembimbing_perusahaan', 403, 'Hanya pembimbing perusahaan yang dapat mengunduh laporan PDF.');
+
+        $filterSiswa = $request->get('siswa');
+        $filterTanggal = $request->get('tanggal');
+        $filterBulan = $request->get('bulan');
+        $filterApproval = $request->get('approval_status');
 
         // Ambil siswa yang dibimbing sesuai role
         if ($user->role === 'guru_pembimbing') {
@@ -102,6 +154,10 @@ class JurnalController extends Controller
                   ->whereYear('tanggal', date('Y', strtotime($filterBulan)));
         }
 
+        if ($filterApproval) {
+            $query->where('approval_status', $filterApproval);
+        }
+
         $jurnal = $query->orderBy('tanggal', 'asc')->get();
 
         $namaBulan = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
@@ -111,6 +167,7 @@ class JurnalController extends Controller
             'filterSiswa' => $filterSiswa,
             'filterTanggal' => $filterTanggal,
             'filterBulan' => $filterBulan,
+            'filterApproval' => $filterApproval,
             'namaBulan' => $namaBulan,
         ])
         ->setPaper('A4', 'portrait')

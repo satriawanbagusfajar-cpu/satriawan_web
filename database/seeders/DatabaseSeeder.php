@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\Siswa;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -17,7 +16,7 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $admin = User::updateOrCreate([
+        User::updateOrCreate([
             'email' => 'admin@pkl.test',
         ], [
             'name' => 'Admin PKL',
@@ -25,29 +24,16 @@ class DatabaseSeeder extends Seeder
             'role' => 'admin',
         ]);
 
-        $siswaUser = User::updateOrCreate([
-            'email' => 'siswa@pkl.test',
+        User::updateOrCreate([
+            'email' => 'guru.pembimbing@pkl.test',
         ], [
-            'name' => 'Siswa PKL',
-            'password' => Hash::make('password'),
-            'role' => 'siswa',
+            'name' => 'Guru Pembimbing Sekolah',
+            'password' => Hash::make('gurupkl123'),
+            'role' => 'guru_pembimbing',
         ]);
 
-        Siswa::updateOrCreate([
-            'user_id' => $siswaUser->id,
-        ], [
-            'nama' => 'Siswa PKL',
-            'nis' => 'NIS001',
-            'kelas' => 'XII RPL 1',
-            'jurusan' => 'RPL',
-            'perusahaan_id' => null,
-        ]);
-
-        // Call seeders lainnya
         $this->call([
-            BagusSeeder::class,
-            SitiSeeder::class,
-            PembimbingSeeder::class,
+            DemoPlacementSeeder::class,
         ]);
     }
 }

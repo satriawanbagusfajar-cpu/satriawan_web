@@ -34,7 +34,14 @@ class JurnalController extends Controller
 
         Jurnal::updateOrCreate(
             ['siswa_id' => $siswa->id, 'tanggal' => $validated['tanggal']],
-            ['kegiatan' => $validated['kegiatan'], 'keterangan' => $validated['keterangan'] ?? null],
+            [
+                'kegiatan' => $validated['kegiatan'],
+                'keterangan' => $validated['keterangan'] ?? null,
+                'approval_status' => 'pending',
+                'approved_by' => null,
+                'approved_at' => null,
+                'approval_notes' => null,
+            ],
         );
 
         return back()->with('success', 'Jurnal harian berhasil disimpan.');

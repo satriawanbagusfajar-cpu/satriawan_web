@@ -567,8 +567,11 @@
                 @elseif(in_array(auth()->user()->role, ['guru_pembimbing', 'pembimbing_perusahaan'], true))
                     <ul class="navbar-nav me-auto ms-lg-3 gap-1">
                         <li class="nav-item"><a class="nav-link {{ request()->routeIs('pembimbing.dashboard') ? 'active' : '' }}" href="{{ route('pembimbing.dashboard') }}"><i class="bi bi-grid-1x2-fill me-1"></i>Dashboard</a></li>
-                        <li class="nav-item"><a class="nav-link {{ request()->routeIs('pembimbing.absensi.*') ? 'active' : '' }}" href="{{ route('pembimbing.absensi.index') }}"><i class="bi bi-calendar-check me-1"></i>Absensi</a></li>
-                        <li class="nav-item"><a class="nav-link {{ request()->routeIs('pembimbing.jurnal.*') ? 'active' : '' }}" href="{{ route('pembimbing.jurnal.index') }}"><i class="bi bi-journal-text me-1"></i>Jurnal</a></li>
+                        <li class="nav-item"><a class="nav-link {{ request()->routeIs('pembimbing.absensi.*') ? 'active' : '' }}" href="{{ route('pembimbing.absensi.index') }}"><i class="bi bi-calendar-check me-1"></i>Absensi @if(auth()->user()->role === 'pembimbing_perusahaan' && ($pendingAbsensiNavbarCount ?? 0) > 0)<span class="badge rounded-pill bg-danger ms-1">{{ $pendingAbsensiNavbarCount }}</span>@endif</a></li>
+                        <li class="nav-item"><a class="nav-link {{ request()->routeIs('pembimbing.jurnal.*') ? 'active' : '' }}" href="{{ route('pembimbing.jurnal.index') }}"><i class="bi bi-journal-text me-1"></i>Jurnal @if(auth()->user()->role === 'pembimbing_perusahaan' && ($pendingJurnalNavbarCount ?? 0) > 0)<span class="badge rounded-pill bg-danger ms-1">{{ $pendingJurnalNavbarCount }}</span>@endif</a></li>
+                        @if(auth()->user()->role === 'pembimbing_perusahaan')
+                            <li class="nav-item"><a class="nav-link {{ request()->routeIs('pembimbing.siswa.*') ? 'active' : '' }}" href="{{ route('pembimbing.siswa.create') }}"><i class="bi bi-person-plus-fill me-1"></i>Tambah Siswa</a></li>
+                        @endif
                     </ul>
                 @else
                     <ul class="navbar-nav me-auto ms-lg-3 gap-1">

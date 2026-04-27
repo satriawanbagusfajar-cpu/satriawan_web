@@ -8,6 +8,33 @@
     </div>
 </div>
 
+@if(auth()->user()->role === 'pembimbing_perusahaan')
+    <div class="card card-modern mb-4 fade-in">
+        <div class="card-body p-3">
+            <h6 class="fw-bold mb-3"><i class="bi bi-bell me-2" style="color:#FF8C42;"></i>Notifikasi Approval</h6>
+            <div class="d-flex flex-column gap-2">
+                @if($pendingAbsensi > 0)
+                    <div class="alert alert-warning mb-0 py-2 px-3">
+                        <i class="bi bi-hourglass-split me-2"></i>Ada {{ $pendingAbsensi }} absensi menunggu approval.
+                        <a href="{{ route('pembimbing.absensi.index', ['approval_status' => 'pending']) }}" class="ms-2 fw-semibold">Lihat</a>
+                    </div>
+                @endif
+                @if($pendingJurnal > 0)
+                    <div class="alert alert-info mb-0 py-2 px-3">
+                        <i class="bi bi-journal-check me-2"></i>Ada {{ $pendingJurnal }} jurnal menunggu approval.
+                        <a href="{{ route('pembimbing.jurnal.index', ['approval_status' => 'pending']) }}" class="ms-2 fw-semibold">Lihat</a>
+                    </div>
+                @endif
+                @if($pendingAbsensi === 0 && $pendingJurnal === 0)
+                    <div class="alert alert-success mb-0 py-2 px-3">
+                        <i class="bi bi-check-circle me-2"></i>Tidak ada approval yang tertunda saat ini.
+                    </div>
+                @endif
+            </div>
+        </div>
+    </div>
+@endif
+
 <div class="row g-3 mb-4">
     <div class="col-md-3 col-6">
         <div class="card stat-card card-modern fade-in fade-in-delay-1">
@@ -60,6 +87,11 @@
         <div class="d-flex justify-content-between align-items-center">
             <h5 class="mb-0"><i class="bi bi-list-check me-2"></i>Daftar Siswa Bimbingan</h5>
             <div>
+                @if(auth()->user()->role === 'pembimbing_perusahaan')
+                    <a href="{{ route('pembimbing.siswa.create') }}" class="btn btn-sm btn-outline-success me-2">
+                        <i class="bi bi-person-plus me-1"></i>Tambah Siswa
+                    </a>
+                @endif
                 <a href="{{ route('pembimbing.absensi.index') }}" class="btn btn-sm btn-outline-primary me-2">
                     <i class="bi bi-calendar-check me-1"></i>Monitoring Absensi
                 </a>

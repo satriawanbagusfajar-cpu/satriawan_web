@@ -98,6 +98,11 @@
             color: white;
         }
 
+        .badge-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+
         .badge-danger {
             background-color: #dc3545;
             color: white;
@@ -117,7 +122,7 @@
 
         .summary-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(5, 1fr);
             gap: 10px;
         }
 
@@ -193,6 +198,8 @@
                     <td>
                         @if($item->status === 'hadir')
                             <span class="badge badge-success">HADIR</span>
+                        @elseif($item->status === 'terlambat')
+                            <span class="badge badge-secondary">TERLAMBAT</span>
                         @elseif($item->status === 'sakit')
                             <span class="badge badge-warning">SAKIT</span>
                         @elseif($item->status === 'izin')
@@ -202,7 +209,7 @@
                         @endif
                     </td>
                     <td>
-                        @if($item->status === 'hadir')
+                        @if(in_array($item->status, ['hadir', 'terlambat'], true))
                             {{ $item->isTerlambat() ? 'Telat' : 'Tepat Waktu' }}
                         @else
                             {{ ucfirst($item->status) }}
@@ -231,6 +238,10 @@
             <div class="summary-item">
                 <label>Izin</label>
                 <span class="value" style="color: #17a2b8;">{{ $totals['izin'] }}</span>
+            </div>
+            <div class="summary-item">
+                <label>Terlambat</label>
+                <span class="value" style="color: #6c757d;">{{ $totals['terlambat'] }}</span>
             </div>
             <div class="summary-item">
                 <label>Alpha</label>

@@ -103,6 +103,16 @@
                         </div>
                     </div>
 
+                    <div class="mb-3">
+                        <div class="text-muted small fw-semibold mb-1">Approval</div>
+                        <div>
+                            <span class="badge bg-{{ $item->approval_badge_class }}">{{ ucfirst($item->approval_status ?? 'pending') }}</span>
+                            @if($item->approval_notes)
+                                <small class="d-block text-muted mt-1">{{ $item->approval_notes }}</small>
+                            @endif
+                        </div>
+                    </div>
+
                     <div>
                         <div class="text-muted small fw-semibold mb-1">Keterangan</div>
                         <div class="text-muted">

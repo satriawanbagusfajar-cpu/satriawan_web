@@ -17,14 +17,28 @@ class Jurnal extends Model
         'tanggal',
         'kegiatan',
         'keterangan',
+        'approval_status',
+        'approved_by',
+        'approved_at',
+        'approval_notes',
     ];
 
     protected $casts = [
         'tanggal' => 'date',
+        'approved_at' => 'datetime',
     ];
 
     public function siswa(): BelongsTo
     {
         return $this->belongsTo(Siswa::class);
+    }
+
+    public function getApprovalBadgeClassAttribute(): string
+    {
+        return match ($this->approval_status) {
+            'approved' => 'success',
+            'rejected' => 'danger',
+            default => 'warning',
+        };
     }
 }

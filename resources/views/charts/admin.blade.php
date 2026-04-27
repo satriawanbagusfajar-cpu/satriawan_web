@@ -43,8 +43,8 @@
 <script>
     const labels = @json($data['labels']);
     const values = @json($data['values']);
-    const colors = ['#10b981', '#f59e0b', '#06b6d4', '#ef4444'];
-    const bgAlpha = ['rgba(16,185,129,0.2)', 'rgba(245,158,11,0.2)', 'rgba(6,182,212,0.2)', 'rgba(239,68,68,0.2)'];
+    const colors = ['#10b981', '#f97316', '#f59e0b', '#06b6d4', '#ef4444'];
+    const bgAlpha = ['rgba(16,185,129,0.2)', 'rgba(249,115,22,0.2)', 'rgba(245,158,11,0.2)', 'rgba(6,182,212,0.2)', 'rgba(239,68,68,0.2)'];
 
     new Chart(document.getElementById('barChart'), {
         type: 'bar',
@@ -95,6 +95,14 @@
                     data: @json($monthly['hadir']),
                     backgroundColor: 'rgba(16,185,129,0.7)',
                     borderColor: '#10b981',
+                    borderWidth: 1,
+                    borderRadius: 4
+                },
+                {
+                    label: 'Terlambat',
+                    data: @json($monthly['terlambat']),
+                    backgroundColor: 'rgba(249,115,22,0.7)',
+                    borderColor: '#f97316',
                     borderWidth: 1,
                     borderRadius: 4
                 },

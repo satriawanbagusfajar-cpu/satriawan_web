@@ -32,16 +32,27 @@
                 <label for="tanggal" class="form-label">Tanggal</label>
                 <input type="date" class="form-control" id="tanggal" name="tanggal" value="{{ $filterTanggal }}">
             </div>
-            <div class="col-md-4 d-flex align-items-end gap-2">
+            <div class="col-md-3">
+                <label for="approval_status" class="form-label">Approval</label>
+                <select class="form-select" id="approval_status" name="approval_status">
+                    <option value="">-- Semua --</option>
+                    <option value="pending" {{ $filterApproval === 'pending' ? 'selected' : '' }}>Pending</option>
+                    <option value="approved" {{ $filterApproval === 'approved' ? 'selected' : '' }}>Approved</option>
+                    <option value="rejected" {{ $filterApproval === 'rejected' ? 'selected' : '' }}>Rejected</option>
+                </select>
+            </div>
+            <div class="col-md-5 d-flex align-items-end gap-2">
                 <button type="submit" class="btn btn-primary flex-grow-1">
                     <i class="bi bi-search me-1"></i>Cari
                 </button>
                 <a href="{{ route('pembimbing.jurnal.index') }}" class="btn btn-outline-secondary">
                     <i class="bi bi-arrow-clockwise"></i>
                 </a>
-                <a href="{{ route('pembimbing.jurnal.downloadPdf', request()->query()) }}" class="btn btn-outline-success" title="Download PDF">
-                    <i class="bi bi-file-pdf"></i>
-                </a>
+                @if($canApprove)
+                    <a href="{{ route('pembimbing.jurnal.downloadPdf', request()->query()) }}" class="btn btn-outline-success" title="Download PDF">
+                        <i class="bi bi-file-pdf"></i>
+                    </a>
+                @endif
             </div>
         </form>
     </div>
@@ -65,7 +76,10 @@
                             <th>Nama Siswa</th>
                             <th>Kegiatan</th>
                             <th>Keterangan</th>
-                            <th>Status</th>
+                            <th>Approval</th>
+                            @if($canApprove)
+                                <th>Aksi</th>
+                            @endif
                         </tr>
                     </thead>
                     <tbody>
@@ -78,10 +92,25 @@
                                     <small>{{ \Illuminate\Support\Str::limit($item->keterangan, 60) }}</small>
                                 </td>
                                 <td>
-                                    <span class="badge bg-success">
-                                        <i class="bi bi-check-circle me-1"></i>Terisi
-                                    </span>
+                                    <span class="badge bg-{{ $item->approval_badge_class }}">{{ ucfirst($item->approval_status ?? 'pending') }}</span>
                                 </td>
+                                @if($canApprove)
+                                    <td>
+                                        @if(($item->approval_status ?? 'pending') === 'pending')
+                                            <form action="{{ route('pembimbing.jurnal.approve', $item) }}" method="POST" class="d-inline">
+                                                @csrf
+                                                <button type="submit" class="btn btn-sm btn-success">Approve</button>
+                                            </form>
+                                            <form action="{{ route('pembimbing.jurnal.reject', $item) }}" method="POST" class="d-inline" onsubmit="return submitRejectReason(this)">
+                                                @csrf
+                                                <input type="hidden" name="approval_notes">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">Tolak</button>
+                                            </form>
+                                        @else
+                                            <small class="text-muted">{{ $item->approval_notes ?: '-' }}</small>
+                                        @endif
+                                    </td>
+                                @endif
                             </tr>
                         @endforeach
                     </tbody>
@@ -116,4 +145,16 @@
         </div>
     @endforeach
 </div>
+
+<script>
+function submitRejectReason(form) {
+    const reason = prompt('Masukkan alasan penolakan jurnal:');
+    if (!reason) {
+        return false;
+    }
+
+    form.querySelector('input[name="approval_notes"]').value = reason;
+    return true;
+}
+</script>
 @endsection

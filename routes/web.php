@@ -10,6 +10,7 @@ use App\Http\Controllers\ChartController;
 use App\Http\Controllers\Pembimbing\DashboardController as PembimbingDashboardController;
 use App\Http\Controllers\Pembimbing\AbsensiController as PembimbingAbsensiController;
 use App\Http\Controllers\Pembimbing\JurnalController as PembimbingJurnalController;
+use App\Http\Controllers\Pembimbing\SiswaController as PembimbingSiswaController;
 use App\Http\Controllers\Siswa\AbsensiController as SiswaAbsensiController;
 use App\Http\Controllers\Siswa\DashboardController as SiswaDashboardController;
 use App\Http\Controllers\Siswa\DokumentasiController;
@@ -33,9 +34,6 @@ Route::get('/', function () {
 Route::middleware('guest')->group(function (): void {
     Route::get('login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('login', [AuthController::class, 'login'])->name('login.attempt');
-
-    Route::get('register', [AuthController::class, 'showRegister'])->name('register');
-    Route::post('register', [AuthController::class, 'register'])->name('register.store');
 });
 
 Route::post('logout', [AuthController::class, 'logout'])
@@ -79,7 +77,7 @@ Route::middleware(['auth', 'role:admin'])
     });
 
 
-Route::middleware(['auth', 'role:siswa'])
+Route::middleware(['auth', 'role:siswa', 'siswa.access.window'])
     ->prefix('siswa')
     ->name('siswa.')
     ->group(function (): void {
@@ -122,13 +120,24 @@ Route::middleware(['auth', 'role:guru_pembimbing,pembimbing_perusahaan'])
         // Absensi
         Route::prefix('absensi')->name('absensi.')->group(function () {
             Route::get('/', [PembimbingAbsensiController::class, 'index'])->name('index');
-            Route::get('/download-pdf', [PembimbingAbsensiController::class, 'downloadPdf'])->name('downloadPdf');
         });
 
         // Jurnal
         Route::prefix('jurnal')->name('jurnal.')->group(function () {
             Route::get('/', [PembimbingJurnalController::class, 'index'])->name('index');
-            Route::get('/download-pdf', [PembimbingJurnalController::class, 'downloadPdf'])->name('downloadPdf');
+        });
+
+        Route::middleware('role:pembimbing_perusahaan')->group(function (): void {
+            Route::get('siswa/create', [PembimbingSiswaController::class, 'create'])->name('siswa.create');
+            Route::post('siswa', [PembimbingSiswaController::class, 'store'])->name('siswa.store');
+
+            Route::get('absensi/download-pdf', [PembimbingAbsensiController::class, 'downloadPdf'])->name('absensi.downloadPdf');
+            Route::post('absensi/{absensi}/approve', [PembimbingAbsensiController::class, 'approve'])->name('absensi.approve');
+            Route::post('absensi/{absensi}/reject', [PembimbingAbsensiController::class, 'reject'])->name('absensi.reject');
+
+            Route::get('jurnal/download-pdf', [PembimbingJurnalController::class, 'downloadPdf'])->name('jurnal.downloadPdf');
+            Route::post('jurnal/{jurnal}/approve', [PembimbingJurnalController::class, 'approve'])->name('jurnal.approve');
+            Route::post('jurnal/{jurnal}/reject', [PembimbingJurnalController::class, 'reject'])->name('jurnal.reject');
         });
     });
 
